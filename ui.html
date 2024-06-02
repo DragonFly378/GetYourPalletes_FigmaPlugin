@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: white;
+      }
+      .header {
+        color: rgb(17, 75, 114);
+        text-align: center;
+      }
+
+      .add-colors {
+        margin-bottom: 20px;
+      }
+      .add-colors button {
+        background-color: rgb(28, 28, 25);
+        margin-top: 3px;
+        padding: 2px 0px;
+        border-radius: 3px;
+        width: 100%;
+        color: white;
+      }
+
+      .form-item {
+        margin-bottom: 10px;
+        border-radius: 14px;
+      }
+
+      .color-section {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 20px;
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+      .item-section {
+        margin-bottom: 5px;
+        display: flex;
+        flex-direction: column;
+        row-gap: 5px;
+      }
+
+      .label-color {
+        display: flex;
+        flex-direction: column;
+        /* width: 100; */
+      }
+
+      input {
+        width: 100%;
+        padding: 2px 7px;
+      }
+
+      .btn {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        row-gap: 10px;
+      }
+
+      .btn-item {
+        grid-column: span 2 / span 2;
+        color: white;
+        padding: 4px 3px;
+        border-radius: 4px;
+      }
+
+      .btn-item.generate {
+        background-color: rgb(70, 98, 222);
+        padding: 8px 0;
+      }
+
+      .btn-item.cancel {
+        background-color: rgb(212, 93, 93);
+        padding: 8px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Get Your Palletes</h1>
+    </div>
+
+    <form id="pluginForm">
+      <fieldset class="form-item">
+        <legend>Color Information</legend>
+
+        <div class="add-colors">
+          <label for="numberOfColors">Number of Colors:</label>
+          <input
+            type="number"
+            id="numberOfColors"
+            name="numberOfColors"
+            min="1"
+            value="1"
+          />
+          <button type="button" id="updateColors">Update</button>
+        </div>
+
+        <div id="colorContainer">
+          <!-- Dynamic color sections will be appended here -->
+        </div>
+
+        <!-- <div class="color-section" id="color-1">
+          <div class="item-section">
+            <label class="label-color" for="colorCode-1">Color Code</label>
+            <input
+              type="color"
+              id="colorCode-1"
+              name="colorCode-1"
+              value="#439900"
+            />
+          </div>
+          <div class="item-section">
+            <label class="label-color" for="colorName-1">Color Name</label>
+            <input
+              type="textt"
+              id="colorName-1"
+              name="colorName-1"
+              value="Primary"
+            />
+          </div>
+        </div> -->
+      </fieldset>
+      <div class="btn">
+        <button class="btn-item generate" id="generate">
+          Generate Pallete
+        </button>
+        <button class="btn-item cancel" id="cancel">Cancel</button>
+      </div>
+    </form>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const colorContainer = document.getElementById("colorContainer");
+        const updateButton = document.getElementById("updateColors");
+        const numberOfColorsInput = document.getElementById("numberOfColors");
+
+        // Fungsi untuk menghasilkan warna heksadesimal acak
+        const getRandomColor = () => {
+          const letters = "0123456789ABCDEF";
+          let color = "#";
+          for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+          }
+          return color;
+        };
+
+        function createColorSection(index) {
+          return `
+            <div class="color-section" id="color-${index}">
+              <div class="item-section">
+                <label class="label-color" for="colorCode-${index}">Color Code</label>
+                <input type="color" id="colorCode-${index}" name="colorCode-${index}" value="${getRandomColor()}" />
+              </div>
+              <div class="item-section">
+                <label class="label-color" for="colorName-${index}">Color Name</label>
+                <input type="text" id="colorName-${index}" name="colorName-${index}" value="Primary" />
+              </div>
+            </div>
+          `;
+        }
+
+        function updateColorSections() {
+          const numberOfColors = parseInt(numberOfColorsInput.value, 10);
+          colorContainer.innerHTML = "";
+          for (let i = 1; i <= numberOfColors; i++) {
+            colorContainer.innerHTML += createColorSection(i);
+          }
+        }
+
+        updateButton.addEventListener("click", updateColorSections);
+
+        // Initialize with one color section
+        updateColorSections();
+      });
+    </script>
+    <script>
+      document.getElementById("generate").onclick = (e) => {
+        e.preventDefault();
+
+        // Get form
+        let colorForm = document.querySelector("#pluginForm");
+
+        // Get data from the Form
+        let colorFormData = new FormData(colorForm);
+
+        // Get total colors
+        let colorSections = document.querySelectorAll(".color-section");
+
+        // Create an object to hold the color data
+        let formDataObj = {
+          colors: [],
+        };
+
+        // Extract color information into the formDataObj.colors array
+        for (let i = 1; i <= colorSections.length; i++) {
+          let colorCode = colorFormData.get(`colorCode-${i}`);
+          let colorName = colorFormData.get(`colorName-${i}`);
+          formDataObj.colors.push({
+            colorCode: colorCode,
+            colorName: colorName,
+          });
+        }
+
+        // console.log(formDataObj);
+        // return true;
+
+        parent.postMessage(
+          {
+            pluginMessage: {
+              type: "actionGenerate",
+              formDataObj,
+            },
+          },
+          "*"
+        );
+      };
+
+      document.getElementById("cancel").onclick = (e) => {
+        parent.postMessage(
+          {
+            pluginMessage: {
+              type: "actionExit",
+            },
+          },
+          "*"
+        );
+      };
+    </script>
+  </body>
+</html>
